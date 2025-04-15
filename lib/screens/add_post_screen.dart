@@ -132,15 +132,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
                 IconButton(
                   onPressed: () => _selectImage(context),
                   icon: const Icon(Icons.upload,
-                      size: 50), // Tăng kích thước icon nếu cần
+                      size: 50),
                 ),
-                const SizedBox(height: 8), // Khoảng cách giữa icon và text
+                const SizedBox(height: 8),
                 const Text(
                   "Create",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white, // Đổi màu nếu cần
+                    color: Colors.white,
                   ),
                 ),
               ],

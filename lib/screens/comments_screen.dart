@@ -74,7 +74,7 @@ if (user == null) {
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               var snap = snapshot.data!.docs[index].data();
-              return CommentCard(snap: snap);
+              return CommentCard(snap: snap,);
             },
           );
         },

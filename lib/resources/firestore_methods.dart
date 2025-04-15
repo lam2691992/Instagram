@@ -115,6 +115,45 @@ class FirestoreMethods {
     }
   }
 
+  // like comment
+
+Future<void> likeComment(
+  String postId,
+  String commentId,
+  String uid,
+  List likes,
+) async {
+  final commentRef = FirebaseFirestore.instance
+      .collection('posts')
+      .doc(postId)
+      .collection('comments')
+      .doc(commentId);
+
+  try {
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(commentRef);
+      if (!snapshot.exists) throw Exception('Comment không tồn tại');
+
+      List currentLikes = List.from(snapshot['likes'] ?? []);
+      bool isLiked = currentLikes.contains(uid);
+
+      if (isLiked) {
+        currentLikes.remove(uid);
+      } else {
+        currentLikes.add(uid);
+      }
+
+      transaction.update(commentRef, {'likes': currentLikes});
+    });
+  } catch (e) {
+    print('Lỗi transaction: $e');
+    throw Exception('Không thể cập nhật like: ${e.toString()}');
+  }
+}
+
+
+
+
 // follow and unfollow
   Future<void> followUser(String uid, String followId) async {
     try {

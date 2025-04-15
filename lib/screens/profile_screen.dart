@@ -7,6 +7,7 @@ import 'package:instagram_clone/screens/login_screen.dart';
 import 'package:instagram_clone/utils/colors.dart';
 import 'package:instagram_clone/utils/utils.dart';
 import 'package:instagram_clone/widgets/follow_button.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String uid;
@@ -25,64 +26,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoading = false;
   bool isFollowing = false;
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  FirebaseAuth.instance.authStateChanges().listen((User? user) {
-    if (user != null) {
-      setState(() {
-        userData = null; // Xóa dữ liệu cũ
-      });
-      getData();
-    }
-  });
-
-  getData();
-}
-
-
-  Future<void> getData() async {
-  setState(() {
-    isLoading = true;
-  });
-
-  try {
-    String? currentUid = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUid == null) return;
-
-    var userSnap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUid)
-        .get();
-
-    var postSnap = await FirebaseFirestore.instance
-        .collection('posts')
-        .where('uid', isEqualTo: currentUid)
-        .get();
-
-    if (!mounted) return;
-
-    setState(() {
-      postLen = postSnap.docs.length;
-      followers = userSnap.data()?['followers']?.length ?? 0;
-      following = userSnap.data()?['following']?.length ?? 0;
-      isFollowing = userSnap
-              .data()?['followers']
-              ?.contains(FirebaseAuth.instance.currentUser?.uid) ??
-          false;
-      userData = userSnap.data();
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        setState(() {
+          userData = null; // Xóa dữ liệu cũ
+        });
+        getData();
+      }
     });
-  } catch (e) {
-    if (!mounted) return;
-    showSnackBar(context, e.toString());
+
+    getData();
   }
 
-  setState(() {
-    isLoading = false;
-  });
-}
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uid != widget.uid) {
+      _clearState();
+      _loadData();
+    }
+  }
 
+  void _clearState() {
+    if (mounted) {
+      setState(() {
+        userData = null;
+        postLen = 0;
+        followers = 0;
+        following = 0;
+        isFollowing = false;
+      });
+    }
+  }
+
+  void _loadData() {
+    if (widget.uid.isNotEmpty) {
+      getData();
+    }
+  }
+
+  Future<void> getData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      var userSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.uid)
+          .get();
+
+      var postSnap = await FirebaseFirestore.instance
+          .collection('posts')
+          .where('uid', isEqualTo: widget.uid)
+          .get();
+
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+
+      if (!mounted) return;
+
+      setState(() {
+        postLen = postSnap.docs.length;
+        followers = userSnap.data()?['followers']?.length ?? 0;
+        following = userSnap.data()?['following']?.length ?? 0;
+        isFollowing =
+            userSnap.data()?['followers']?.contains(currentUid) ?? false;
+        userData = userSnap.data();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showSnackBar(context, e.toString());
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +131,13 @@ void initState() {
                               children: [
                                 CircleAvatar(
                                   backgroundColor: Colors.grey,
-                                  backgroundImage: userData?['photoUrl'] != null
-                                      ? NetworkImage(userData!['photoUrl'])
-                                      : null,
+                                  backgroundImage:
+                                      (userData?['photoUrl'] != null &&
+                                              userData!['photoUrl'].isNotEmpty)
+                                          ? NetworkImage(userData!['photoUrl'])
+                                          : const AssetImage(
+                                                  'assets/default_avatar.png')
+                                              as ImageProvider,
                                   radius: 40,
                                 ),
                                 Expanded(
@@ -143,6 +170,7 @@ void initState() {
                                                   function: () async {
                                                     await AuthMethods()
                                                         .signOut(context);
+
                                                     setState(() {
                                                       userData = null;
                                                       postLen = 0;
@@ -152,14 +180,12 @@ void initState() {
                                                     });
 
                                                     Navigator.of(context)
-                                                        .pushAndRemoveUntil(
+                                                        .pushReplacement(
                                                       MaterialPageRoute(
                                                           builder: (context) =>
                                                               const LoginScreen()),
-                                                      (route) => false,
                                                     );
-                                                  },
-                                                )
+                                                  })
                                               : isFollowing
                                                   ? FollowButton(
                                                       backgroundColor:
@@ -249,44 +275,43 @@ void initState() {
                                 child: Text("No posts available"));
                           }
 
-                          return SizedBox(
-                            height:
-                                300, // Đặt chiều cao cố định để tránh lỗi bố cục
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: snapshot.data!.docs.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 5,
-                                mainAxisSpacing: 1.5,
-                                childAspectRatio: 1,
-                              ),
-                              itemBuilder: (context, index) {
-                                DocumentSnapshot snap =
-                                    snapshot.data!.docs[index];
+                          return Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: StaggeredGrid.count(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 4,
+                              crossAxisSpacing: 4,
+                              children: snapshot.data!.docs
+                                  .asMap()
+                                  .entries
+                                  .map<Widget>((entry) {
+                                int index = entry.key;
+                                var doc = entry.value;
 
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.black12,
-                                  ),
+                                return StaggeredGridTile.count(
+                                  crossAxisCellCount: index % 7 == 0 ? 2 : 1,
+                                  mainAxisCellCount: index % 7 == 0 ? 2 : 1,
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     child: Image.network(
-                                      (snap.data()! as Map<String, dynamic>)[
-                                              'postUrl'] ??
-                                          '',
+                                      doc['postUrl'],
                                       fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.error,
+                                              color: Colors.red),
+                                        );
+                                      },
                                     ),
                                   ),
                                 );
-                              },
+                              }).toList(),
                             ),
                           );
                         },
-                      )
+                      ),
                     ],
                   ),
           );

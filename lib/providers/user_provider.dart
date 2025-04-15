@@ -17,5 +17,9 @@ class UserProvider with ChangeNotifier {
       print("Error refreshing user: $e");
     }
   }
-}
 
+  void clearUser() {
+    _user = null;
+    notifyListeners();
+  }
+}

@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class CommentCard extends StatefulWidget {
-  final Map<String, dynamic> snap; // Chuyển snap thành Map để sửa đổi được
+  final Map<String, dynamic> snap;
   const CommentCard({super.key, required this.snap});
 
   @override
@@ -16,6 +16,14 @@ class CommentCard extends StatefulWidget {
 
 class _CommentCardState extends State<CommentCard> {
   bool isAnimating = false;
+  late List likes; // Lưu trạng thái "like"
+
+  @override
+  void initState() {
+    super.initState();
+    likes = List.from(
+        widget.snap['likes'] ?? []);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +31,15 @@ class _CommentCardState extends State<CommentCard> {
     final User? user = userProvider.getUser;
 
     if (user == null) {
-      return const SizedBox(); // Tránh lỗi nếu user chưa tải xong
+      return const SizedBox();
     }
-
-    // Đảm bảo widget.snap['likes'] không null
-    List likes = widget.snap['likes'] ?? [];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundImage: NetworkImage(
-              widget.snap['profilePic'],
-            ),
+            backgroundImage: NetworkImage(widget.snap['profilePic']),
             radius: 18,
           ),
           Expanded(
@@ -87,38 +90,28 @@ class _CommentCardState extends State<CommentCard> {
               onPressed: () async {
                 setState(() {
                   isAnimating = true;
-                  // Tạo bản sao danh sách likes để cập nhật
-                  List updatedLikes = List.from(likes);
-                  if (updatedLikes.contains(user.uid)) {
-                    updatedLikes.remove(user.uid);
+
+                  if (likes.contains(user.uid)) {
+                    likes.remove(user.uid);
                   } else {
-                    updatedLikes.add(user.uid);
+                    likes.add(user.uid);
                   }
-                  widget.snap['likes'] = updatedLikes; // Cập nhật snap
                 });
 
-                await FirestoreMethods().likePost(
+                await FirestoreMethods().likeComment(
                   widget.snap['postId'],
+                  widget.snap['commentId'],
                   user.uid,
-                  widget.snap['likes'], // Đảm bảo không null
+                  likes,
                 );
 
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  setState(() {
-                    isAnimating = false;
-                  });
+                setState(() {
+                  isAnimating = false;
                 });
               },
-              icon: likes.contains(user.uid) // Kiểm tra trên danh sách đã xử lý
-                  ? const Icon(
-                      Icons.favorite,
-                      color: Colors.red, // Icon đổi màu đỏ khi đã like
-                      size: 16,
-                    )
-                  : const Icon(
-                      Icons.favorite_border,
-                      size: 16,
-                    ),
+              icon: likes.contains(user.uid)
+                  ? const Icon(Icons.favorite, color: Colors.red, size: 16)
+                  : const Icon(Icons.favorite_border, size: 16),
             ),
           ),
         ],

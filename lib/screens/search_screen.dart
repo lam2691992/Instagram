@@ -71,13 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   final username =
                       data['username'].toString().trim().toLowerCase();
 
-                  // Số ký tự tối thiểu cần nhập để tìm thấy username
-                  int minLengthRequired =
-                      (username.replaceAll(' ', '').length / 2).ceil();
-
-                  // Kiểm tra nếu người dùng nhập đủ số ký tự yêu cầu
-                  return searchText.length >= minLengthRequired &&
-                      username.contains(searchText);
+                  return searchText.isNotEmpty && username.contains(searchText);
                 }).toList();
 
                 return ListView.builder(
@@ -96,19 +90,25 @@ class _SearchScreenState extends State<SearchScreen> {
                     return InkWell(
                       onTap: () {
                         if (user['uid'] != null) {
-                          Navigator.of(context).push(
+                          Navigator.push(
+                            context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  ProfileScreen(uid: user['uid']),
+                              builder: (_) => ProfileScreen(
+                                uid: user['uid'],
+                                key: ValueKey(
+                                    user['uid']),
+                              ),
                             ),
                           );
                         }
                       },
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: NetworkImage(
-                            user['photoUrl'] ?? '',
-                          ),
+                          backgroundImage: user['photoUrl'] != null &&
+                                  user['photoUrl'].isNotEmpty
+                              ? NetworkImage(user['photoUrl'])
+                              : const AssetImage('assets/default.jpg')
+                                  as ImageProvider,
                           radius: 16,
                         ),
                         title: Text(
@@ -121,8 +121,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 );
               },
             )
-          : FutureBuilder(
-              future: FirebaseFirestore.instance.collection('posts').get(),
+          : StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('posts').snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(

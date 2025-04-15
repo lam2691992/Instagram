@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:instagram_clone/resources/storage_methods.dart';
 import 'package:instagram_clone/models/user.dart' as model;
 import 'package:instagram_clone/screens/login_screen.dart';
+import 'package:instagram_clone/utils/utils.dart';
 
 class AuthMethods {
   static const String _usersCollection = 'users';
@@ -84,15 +85,15 @@ class AuthMethods {
     }
   }
 
-  // Đăng xuất
+  // log out
   Future<void> signOut(BuildContext context) async {
-    await _auth.signOut();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
-  }
+  await _auth.signOut();
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (context) => const LoginScreen()),
+    (route) => false,
+  );
+}
+
 
   // Validate input
   void _validateInputs(List<String> inputs, [Uint8List? file]) {

@@ -37,22 +37,24 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     String res = await AuthMethods().loginUser(
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
-    if (res == 'success') {
-      Provider.of<UserProvider>(context, listen: false).refreshUser();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => const ResponsiveLayout(
-            mobileScreenLayout: MobileScreenLayout(),
-            webScreenLayout: WebScreenLayout(),
-          ),
-        ),
-        (route) => false,
-      );
-    } else {
+  email: _emailController.text,
+  password: _passwordController.text,
+);
+
+if (res == 'success') {
+  //  Refresh user data ngay sau login
+  await Provider.of<UserProvider>(context, listen: false).refreshUser();
+
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => const ResponsiveLayout(
+        mobileScreenLayout: MobileScreenLayout(),
+        webScreenLayout: WebScreenLayout(),
+      ),
+    ),
+  );
+}
+else {
       if (!mounted) return;
       showSnackBar(context, res);
     }

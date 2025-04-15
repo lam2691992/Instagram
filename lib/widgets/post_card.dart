@@ -1,13 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:instagram_clone/models/user.dart';
 import 'package:instagram_clone/providers/user_provider.dart';
 import 'package:instagram_clone/resources/firestore_methods.dart';
 import 'package:instagram_clone/screens/comments_screen.dart';
 import 'package:instagram_clone/utils/colors.dart';
 import 'package:instagram_clone/utils/global_variables.dart';
-import 'package:instagram_clone/utils/utils.dart';
 import 'package:instagram_clone/widgets/like_animation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -55,8 +53,7 @@ class _PostCardState extends State<PostCard> {
       return const SizedBox();
     }
 
-    bool isOwner =
-        user.uid == widget.snap['uid']; // Kiểm tra nếu là chủ bài viết
+    bool isOwner = user.uid == widget.snap['uid'];
 
     return Container(
       decoration: BoxDecoration(
@@ -194,10 +191,14 @@ class _PostCardState extends State<PostCard> {
                       widget.snap['likes'],
                     );
 
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      setState(() {
-                        isAnimating = false;
-                      });
+                    DocumentSnapshot postSnap = await FirebaseFirestore.instance
+                        .collection('posts')
+                        .doc(widget.snap['postId'])
+                        .get();
+
+                    setState(() {
+                      widget.snap['likes'] = List.from(postSnap['likes']);
+                      isAnimating = false;
                     });
                   },
                   icon: widget.snap['likes'].contains(user.uid)
@@ -215,7 +216,7 @@ class _PostCardState extends State<PostCard> {
               IconButton(
                 onPressed: () {
                   Share.share(
-                      "📷 ${widget.snap['description']}\n🔗 ${widget.snap['postUrl']}");
+                      "📷${widget.snap['description']}\n🔗 ${widget.snap['postUrl']}");
                 },
                 icon: const Icon(Icons.send_outlined),
               ),

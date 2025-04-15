@@ -33,7 +33,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
 void initState() {
   super.initState();
-  _image = null; // Đặt lại ảnh về null khi khởi động
+  _image = null;
 }
 
 
@@ -75,7 +75,7 @@ void initState() {
     if (res == 'success') {
       if (!mounted) return;
       setState(() {
-        _image = null; // Reset ảnh sau khi đăng ký thành công
+        _image = null; // Reset image when signup is successful
       });
 
       Navigator.of(context).pushReplacement(
