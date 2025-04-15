@@ -75,6 +75,7 @@ flutter:
     - assets/ic_instagram.svg
     - assets/1111.jpg
     - assets/default.jpg
+    - .env 
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
